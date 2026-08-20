@@ -13,6 +13,7 @@ from app.models.ingestion import IngestionDeadLetter, IngestionRun
 from app.repositories.document_repository import DocumentRepository, compute_content_hash
 from app.search.chunking import chunk_document_text
 from app.services.categorization import classify_document
+from app.services.change_radar_service import generate_change_radar_report
 from app.services.graph_service import extract_and_persist_relationships
 from app.services.ingestion.base import FetchedDocument, RawContentFormat, SourceConnector, SourceDocumentRef
 from app.services.language_detection import detect_language
@@ -76,6 +77,7 @@ class IngestionPipeline:
         existing = await self.documents.get_by_natural_key(connector.source_name, ref.source_document_id)
         if existing is not None and existing.content_hash == content_hash:
             return None  # unchanged — idempotent skip, never reprocessed
+        old_text = existing.extracted_text if existing is not None else None
 
         lang = detect_language(text, self.settings)
         classification = await classify_document(
@@ -130,6 +132,8 @@ class IngestionPipeline:
 
         await self._rechunk_and_embed(document, text)
         await extract_and_persist_relationships(self.db, document)
+        if not was_new:
+            await generate_change_radar_report(self.db, document, old_text, text)
         await self.db.flush()
         return document
 
