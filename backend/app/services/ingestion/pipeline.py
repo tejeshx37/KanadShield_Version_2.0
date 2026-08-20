@@ -13,6 +13,7 @@ from app.models.ingestion import IngestionDeadLetter, IngestionRun
 from app.repositories.document_repository import DocumentRepository, compute_content_hash
 from app.search.chunking import chunk_document_text
 from app.services.categorization import classify_document
+from app.services.graph_service import extract_and_persist_relationships
 from app.services.ingestion.base import FetchedDocument, RawContentFormat, SourceConnector, SourceDocumentRef
 from app.services.language_detection import detect_language
 from app.services.metadata_extraction import extract_date, extract_department, extract_keywords, infer_jurisdiction
@@ -128,6 +129,7 @@ class IngestionPipeline:
             )
 
         await self._rechunk_and_embed(document, text)
+        await extract_and_persist_relationships(self.db, document)
         await self.db.flush()
         return document
 

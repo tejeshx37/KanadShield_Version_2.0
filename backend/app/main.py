@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api.v1 import ai, acts, auth, documents, judgments, organizations, search
+from app.api.v1 import ai, acts, auth, documents, graph, judgments, organizations, search
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
 
@@ -65,3 +65,4 @@ app.include_router(judgments.router, prefix=settings.API_V1_PREFIX)
 app.include_router(organizations.router, prefix=settings.API_V1_PREFIX)
 app.include_router(search.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ai.router, prefix=settings.API_V1_PREFIX)
+app.include_router(graph.router, prefix=settings.API_V1_PREFIX)
