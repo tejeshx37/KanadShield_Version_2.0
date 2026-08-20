@@ -15,8 +15,10 @@ from app.api.v1 import (
     compare,
     dashboard,
     documents,
+    multilingual,
     graph,
     judgments,
+    offline,
     organizations,
     research,
     schemes,
@@ -93,3 +95,5 @@ app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
 app.include_router(alerts.router, prefix=settings.API_V1_PREFIX)
 app.include_router(research.router, prefix=settings.API_V1_PREFIX)
 app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX)
+app.include_router(multilingual.router, prefix=settings.API_V1_PREFIX)
+app.include_router(offline.router, prefix=settings.API_V1_PREFIX)
