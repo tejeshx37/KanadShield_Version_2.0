@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_app_settings, get_current_user, get_db
+from app.core.audit import write_audit_log
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import limiter
 from app.core.security import (
@@ -48,6 +49,9 @@ async def register(request: Request, payload: UserRegisterRequest, db: AsyncSess
         hashed_password=hash_password(payload.password),
         full_name=payload.full_name,
     )
+    await write_audit_log(
+        db, user_id=user.id, action="register", resource_type="user", resource_id=str(user.id), result="success", request=request
+    )
     return user
 
 
@@ -66,9 +70,19 @@ async def login(
         detail={"error": {"code": "invalid_credentials", "message": "Incorrect email or password"}},
     )
     if user is None or not verify_password(payload.password, user.hashed_password):
+        # Committed immediately: the request's exception path rolls back
+        # the session, which would otherwise silently discard this
+        # security-relevant audit entry.
+        await write_audit_log(
+            db, user_id=None, action="login", resource_type="user", resource_id=payload.email, result="failure", request=request
+        )
+        await db.commit()
         raise invalid
     if not user.is_active:
         raise invalid
+    await write_audit_log(
+        db, user_id=user.id, action="login", resource_type="user", resource_id=str(user.id), result="success", request=request
+    )
     return await _issue_tokens(user, db, settings)
 
 

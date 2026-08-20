@@ -3,10 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1 import (
     ai,
     acts,
+    admin,
     alerts,
     auth,
     bookmarks,
@@ -33,6 +35,10 @@ settings = get_settings()
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Applies `default_limits` (RATE_LIMIT_DEFAULT) to every route automatically —
+# without this middleware, only routes with an explicit @limiter.limit(...)
+# decorator would be rate-limited, leaving most public endpoints unprotected.
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -97,3 +103,4 @@ app.include_router(research.router, prefix=settings.API_V1_PREFIX)
 app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX)
 app.include_router(multilingual.router, prefix=settings.API_V1_PREFIX)
 app.include_router(offline.router, prefix=settings.API_V1_PREFIX)
+app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
