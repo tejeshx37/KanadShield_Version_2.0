@@ -82,7 +82,15 @@ async def get_entity_graph(db: AsyncSession, entity_id: uuid.UUID, *, depth: int
     nodes = (await db.execute(nodes_stmt)).scalars().all()
 
     return {
-        "nodes": [{"id": str(n.id), "type": n.entity_type, "name": n.name} for n in nodes],
+        "nodes": [
+            {
+                "id": str(n.id),
+                "type": n.entity_type,
+                "name": n.name,
+                "document_id": str(n.canonical_document_id) if n.canonical_document_id else None,
+            }
+            for n in nodes
+        ],
         "edges": [
             {
                 "source": str(e.source_entity_id),
@@ -94,3 +102,15 @@ async def get_entity_graph(db: AsyncSession, entity_id: uuid.UUID, *, depth: int
             for e in edges
         ],
     }
+
+
+async def get_document_graph(db: AsyncSession, document_id: uuid.UUID) -> dict:
+    """Looks up the canonical LegalEntity for a document (documents don't
+    carry a graph directly — the graph is keyed by entity) and returns its
+    entity graph. Lets the frontend request a graph by the document id it
+    actually has, instead of an internal entity id it has no way to obtain."""
+    stmt = select(LegalEntity).where(LegalEntity.canonical_document_id == document_id)
+    entity = (await db.execute(stmt)).scalar_one_or_none()
+    if entity is None:
+        return {"nodes": [], "edges": []}
+    return await get_entity_graph(db, entity.id)

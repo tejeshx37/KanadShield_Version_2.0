@@ -1,61 +1,63 @@
-import axios, { AxiosError } from 'axios'
-import { API_BASE_URL } from '@/lib/env'
-import { useAuthStore } from '@/store/authStore'
+import { API_BASE_URL } from '../lib/config';
 
-export const apiClient = axios.create({ baseURL: API_BASE_URL })
+export class ApiError extends Error {
+  status: number;
+  code: string;
 
-apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-let refreshInFlight: Promise<string | null> | null = null
-
-async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = useAuthStore.getState().refreshToken
-  if (!refreshToken) return null
-  try {
-    const resp = await axios.post(`${API_BASE_URL}/auth/refresh`, { refresh_token: refreshToken })
-    const { access_token, refresh_token } = resp.data
-    const user = useAuthStore.getState().user
-    if (user) useAuthStore.getState().setSession(access_token, refresh_token, user)
-    return access_token
-  } catch {
-    useAuthStore.getState().clearSession()
-    return null
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.status = status;
+    this.code = code;
   }
 }
 
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const original = error.config
-    if (error.response?.status === 401 && original && !(original as { _retry?: boolean })._retry) {
-      ;(original as { _retry?: boolean })._retry = true
-      refreshInFlight ??= refreshAccessToken()
-      const newToken = await refreshInFlight
-      refreshInFlight = null
-      if (newToken) {
-        original.headers = original.headers ?? {}
-        original.headers.Authorization = `Bearer ${newToken}`
-        return apiClient(original)
+type RequestOptions = {
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  body?: unknown;
+  params?: Record<string, unknown>;
+};
+
+function buildUrl(path: string, params?: RequestOptions['params']): string {
+  const url = new URL(`${API_BASE_URL}${path}`);
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== '') {
+        url.searchParams.set(key, String(value));
       }
     }
-    return Promise.reject(error)
-  },
-)
-
-export interface ApiErrorBody {
-  error: { code: string; message: string }
+  }
+  return url.toString();
 }
 
-export function extractErrorMessage(error: unknown): string {
-  if (axios.isAxiosError(error)) {
-    const body = error.response?.data as ApiErrorBody | undefined
-    if (body?.error?.message) return body.error.message
+export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const url = buildUrl(path, options.params);
+  const token = localStorage.getItem('auth_token');
+
+  const response = await fetch(url, {
+    method: options.method ?? 'GET',
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  if (!response.ok) {
+    let code = 'unknown_error';
+    let message = `Request failed with status ${response.status}`;
+    try {
+      const payload = await response.json();
+      code = payload?.error?.code ?? code;
+      message = payload?.error?.message ?? message;
+    } catch {
+      // response body wasn't JSON; keep default message
+    }
+    throw new ApiError(response.status, code, message);
   }
-  return 'Something went wrong. Please try again.'
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
 }

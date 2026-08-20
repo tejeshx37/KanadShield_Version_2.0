@@ -1,44 +1,45 @@
-import { Routes, Route } from 'react-router-dom'
-import { AppShell } from '@/components/layout/AppShell'
-import { HomePage } from '@/pages/HomePage'
-import { SearchPage } from '@/features/search/SearchPage'
-import { DocumentDetailPage } from '@/features/documents/DocumentDetailPage'
-import { ActDetailPage } from '@/features/acts/ActDetailPage'
-import { JudgmentDetailPage } from '@/features/judgments/JudgmentDetailPage'
-import { GraphPage } from '@/features/graph/GraphPage'
-import { TimelinePage } from '@/features/timeline/TimelinePage'
-import { ChangeRadarPage } from '@/features/changeRadar/ChangeRadarPage'
-import { SchemesPage } from '@/features/schemes/SchemesPage'
-import { SchemeMatchPage } from '@/features/schemes/SchemeMatchPage'
-import { ResearchPage } from '@/features/research/ResearchPage'
-import { AlertsPage } from '@/features/alerts/AlertsPage'
-import { DashboardPage } from '@/features/dashboard/DashboardPage'
-import { ProfilePage } from '@/features/profile/ProfilePage'
-import { SettingsPage } from '@/features/settings/SettingsPage'
-import { LoginPage } from '@/features/auth/LoginPage'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AppLayout } from './components/layout/AppLayout';
+import { DashboardPage } from './pages/DashboardPage';
+import { ResearchPage } from './pages/ResearchPage';
+import { ArchivesPage } from './pages/ArchivesPage';
+import { DocumentDetailPage } from './pages/DocumentDetailPage';
+import { InsightsPage } from './pages/InsightsPage';
+import { PublicServicePage } from './pages/PublicServicePage';
+import { LibraryPage } from './pages/LibraryPage';
+import { SupportPage } from './pages/SupportPage';
 
-export default function App() {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+    },
+  },
+});
+
+function App() {
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/documents/:id" element={<DocumentDetailPage />} />
-        <Route path="/documents/:id/timeline" element={<TimelinePage />} />
-        <Route path="/acts/:id" element={<ActDetailPage />} />
-        <Route path="/judgments/:id" element={<JudgmentDetailPage />} />
-        <Route path="/graph" element={<GraphPage />} />
-        <Route path="/timeline" element={<TimelinePage />} />
-        <Route path="/change-radar" element={<ChangeRadarPage />} />
-        <Route path="/schemes" element={<SchemesPage />} />
-        <Route path="/schemes/match" element={<SchemeMatchPage />} />
-        <Route path="/research" element={<ResearchPage />} />
-        <Route path="/alerts" element={<AlertsPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/login" element={<LoginPage />} />
-      </Route>
-    </Routes>
-  )
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/research" element={<ResearchPage />} />
+            <Route path="/archives" element={<ArchivesPage />} />
+            <Route path="/archives/documents/:id" element={<DocumentDetailPage />} />
+            <Route path="/insights" element={<InsightsPage />} />
+            <Route path="/public-service" element={<PublicServicePage />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
 }
+
+export default App;

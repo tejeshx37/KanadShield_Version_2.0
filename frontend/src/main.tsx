@@ -1,33 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 
-// Versioned service worker registration: the app shell (JS/CSS/HTML) is
-// precached by vite-plugin-pwa/Workbox with content-hash-based cache
-// busting on each deploy — new versions auto-update in the background.
-if ('serviceWorker' in navigator) {
-  registerSW({ immediate: true })
-}
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30_000,
-    },
-  },
-})
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <App />
   </StrictMode>,
 )
