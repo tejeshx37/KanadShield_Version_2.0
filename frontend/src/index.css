@@ -87,28 +87,30 @@ body,
   height: 100%;
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  color: var(--ink);
-  background: var(--canvas-bg);
-  -webkit-font-smoothing: antialiased;
-}
+@layer base {
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--ink);
+    background: var(--canvas-bg);
+    -webkit-font-smoothing: antialiased;
+  }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+  }
 
-code,
-.mono {
-  font-family: var(--font-mono);
-}
+  code,
+  .mono {
+    font-family: var(--font-mono);
+  }
 
-a {
-  color: inherit;
+  a {
+    color: inherit;
+  }
 }
