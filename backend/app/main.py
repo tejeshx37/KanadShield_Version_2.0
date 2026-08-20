@@ -13,6 +13,7 @@ from app.api.v1 import (
     change_radar,
     citizens,
     compare,
+    dashboard,
     documents,
     graph,
     judgments,
@@ -91,3 +92,4 @@ app.include_router(citizens.router, prefix=settings.API_V1_PREFIX)
 app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
 app.include_router(alerts.router, prefix=settings.API_V1_PREFIX)
 app.include_router(research.router, prefix=settings.API_V1_PREFIX)
+app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX)
