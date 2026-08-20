@@ -2,8 +2,8 @@ import uuid
 from datetime import date as date_type
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import ARRAY, Date, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import ARRAY, Computed, Date, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config import get_settings
@@ -59,6 +59,19 @@ class Document(Base, UUIDPKMixin, TimestampMixin):
 
     doc_metadata: Mapped[dict] = mapped_column("metadata", JSONB, nullable=False, default=dict)
 
+    # Generated column created by migration 0002_search_indexes.py — declared
+    # here as Computed so SQLAlchemy never attempts to write to it directly.
+    search_vector: Mapped[str | None] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "setweight(to_tsvector('english', coalesce(title, '')), 'A') || "
+            "setweight(to_tsvector('english', coalesce(subject, '')), 'B') || "
+            "setweight(to_tsvector('english', coalesce(extracted_text, '')), 'C')",
+            persisted=True,
+        ),
+        nullable=True,
+    )
+
     chunks: Mapped[list["DocumentChunk"]] = relationship(back_populates="document", cascade="all, delete-orphan")
     versions: Mapped[list["DocumentVersion"]] = relationship(back_populates="document", cascade="all, delete-orphan")
     translations: Mapped[list["DocumentTranslation"]] = relationship(back_populates="document", cascade="all, delete-orphan")
@@ -98,6 +111,9 @@ class DocumentChunk(Base, UUIDPKMixin, TimestampMixin):
     section_ref: Mapped[str | None] = mapped_column(String(200))
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
     embedding: Mapped[list[float] | None] = mapped_column(Vector(_EMBEDDING_DIM))
+    search_vector: Mapped[str | None] = mapped_column(
+        TSVECTOR, Computed("to_tsvector('english', coalesce(text, ''))", persisted=True), nullable=True
+    )
 
     document: Mapped[Document] = relationship(back_populates="chunks")
 

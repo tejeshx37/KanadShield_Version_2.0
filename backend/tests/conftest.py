@@ -39,6 +39,9 @@ def _create_test_database():
 @pytest_asyncio.fixture
 async def db_engine():
     engine = create_async_engine(TEST_DB_URL, poolclass=sa.pool.NullPool)
+    async with engine.begin() as conn:
+        table_names = ", ".join(f'"{t.name}"' for t in reversed(Base.metadata.sorted_tables))
+        await conn.execute(sa.text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY CASCADE"))
     yield engine
     await engine.dispose()
 

@@ -5,7 +5,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api.v1 import acts, auth, documents, judgments, organizations
+from app.api.v1 import acts, auth, documents, judgments, organizations, search
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -64,3 +64,4 @@ app.include_router(documents.router, prefix=settings.API_V1_PREFIX)
 app.include_router(acts.router, prefix=settings.API_V1_PREFIX)
 app.include_router(judgments.router, prefix=settings.API_V1_PREFIX)
 app.include_router(organizations.router, prefix=settings.API_V1_PREFIX)
+app.include_router(search.router, prefix=settings.API_V1_PREFIX)
