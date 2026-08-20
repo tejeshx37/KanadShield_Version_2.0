@@ -7,7 +7,9 @@ from slowapi.errors import RateLimitExceeded
 from app.api.v1 import (
     ai,
     acts,
+    alerts,
     auth,
+    bookmarks,
     change_radar,
     citizens,
     compare,
@@ -15,6 +17,7 @@ from app.api.v1 import (
     graph,
     judgments,
     organizations,
+    research,
     schemes,
     search,
     timeline,
@@ -85,3 +88,6 @@ app.include_router(timeline.router, prefix=settings.API_V1_PREFIX)
 app.include_router(change_radar.router, prefix=settings.API_V1_PREFIX)
 app.include_router(schemes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(citizens.router, prefix=settings.API_V1_PREFIX)
+app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
+app.include_router(alerts.router, prefix=settings.API_V1_PREFIX)
+app.include_router(research.router, prefix=settings.API_V1_PREFIX)
