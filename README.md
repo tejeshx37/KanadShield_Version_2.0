@@ -8,8 +8,9 @@ See [`docs/ARCHITECTURE_AUDIT.md`](docs/ARCHITECTURE_AUDIT.md) for the
 backend's full build audit and honest done/partial/not-done status per
 module. See [`docs/CONNECTOR_STATUS.md`](docs/CONNECTOR_STATUS.md) for
 ingestion connector reachability notes, and
-[`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) for the frontend-authored API
-contract now being reconciled against the real backend routes.
+[`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) for how the frontend was
+reconciled against the real backend routes (including the notable gaps it
+had to work around).
 
 ## Stack
 
@@ -70,15 +71,19 @@ architecture:
 
 - Design token system, sidebar/canvas layout, language/department switchers (`frontend/src/`)
 - Dashboard, Research (search + filters), Archives (list + document detail
-  with cross-links and knowledge graph) — wired to real query hooks
+  with cross-links, knowledge graph, and on-demand AI summary) — wired to
+  the real backend's actual routes and response shapes
 - Insights, Public Service (DigiLocker), Library, Support — routed but
   explicitly marked "not yet implemented," per the spec's Definition of
   Done (no fake-data screens)
 
 Its API layer was originally written against a self-authored contract
-(`docs/API_CONTRACT.md`) before the real backend below existed in this
-branch; reconciling the two — updating request/response shapes to match the
-actual FastAPI routes — is in progress.
+before the real backend existed in this branch; it has since been
+reconciled to call the actual FastAPI routes and shapes — see
+[`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) for what changed and the
+handful of real backend gaps (no document status field, no document→graph
+lookup route) that required a small, justified backend addition or an
+honest client-side workaround rather than invented data.
 
 ## Configuration
 

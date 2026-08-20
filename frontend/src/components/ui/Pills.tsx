@@ -1,4 +1,8 @@
-import type { DocumentStatus, Severity } from '../../api/types';
+import type { DocumentStatus } from '../../api/types';
+
+// Mirrors backend/app/models/enums.py ImpactLevel — used by the (not yet
+// wired) Change Radar view.
+export type Severity = 'critical' | 'high' | 'medium' | 'low';
 
 const statusLabel: Record<DocumentStatus, string> = {
   active: 'Active',

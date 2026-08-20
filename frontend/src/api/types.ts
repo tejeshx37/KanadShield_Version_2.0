@@ -1,76 +1,146 @@
+// Shapes mirror backend/app/schemas/*.py and the dict responses returned
+// directly by backend/app/api/v1/*.py — see that source for the
+// authoritative definitions.
+
 export type DocumentStatus = 'active' | 'amended' | 'superseded';
-export type Severity = 'critical' | 'high' | 'medium' | 'low';
 
 export interface Paginated<T> {
   items: T[];
   total: number;
   page: number;
-  pageSize: number;
-}
-
-export interface FacetCount {
-  id: string;
-  label: string;
-  count: number;
+  page_size: number;
 }
 
 export interface Department {
   id: string;
   name: string;
-  code: string;
+  ministry_id: string | null;
 }
 
-export interface DocumentType {
+export interface Ministry {
   id: string;
   name: string;
 }
 
-export interface Jurisdiction {
+export interface Court {
   id: string;
   name: string;
-}
-
-export interface Language {
-  code: string;
-  label: string;
 }
 
 export interface DocumentSummary {
   id: string;
+  source: string;
   title: string;
-  type: string;
-  department: string;
+  document_type: string;
   jurisdiction: string;
-  status: DocumentStatus;
-  issuedDate: string;
-  referenceNumber: string;
+  state: string | null;
+  source_language: string;
+  date: string | null;
+  year: number | null;
+  subject: string | null;
+  source_url: string | null;
+  text_available: boolean;
+  classification_confidence: number | null;
 }
 
 export interface DocumentDetail extends DocumentSummary {
-  sourceUrl: string;
-  cachedCopyUrl?: string;
-  summary: string;
-  keyProvisions: string[];
-  metadata: Record<string, string>;
+  case_number: string | null;
+  act_number: string | null;
+  keywords: string[] | null;
+  pdf_path: string | null;
+  date_confidence: number | null;
+  doc_metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 }
 
-export type CrossLinkType = 'issued_under' | 'supersedes' | 'superseded_by' | 'interprets' | 'cites';
+export interface SearchResultItem {
+  document_id: string;
+  title: string;
+  document_type: string;
+  jurisdiction: string;
+  state: string | null;
+  date: string | null;
+  source_url: string | null;
+  snippet: string;
+  score: number;
+  lexical_score: number;
+  semantic_score: number;
+}
 
-export interface CrossLink {
-  type: CrossLinkType;
-  document: DocumentSummary;
+export interface SearchResponse {
+  items: SearchResultItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  facets: {
+    document_type: Record<string, number>;
+    jurisdiction: Record<string, number>;
+  };
+  search_time_ms: number;
+}
+
+export interface TrendingSearch {
+  query: string;
+  count: number;
+}
+
+export interface FrequentDocument {
+  document_id: string;
+  title: string;
+  views: number;
+}
+
+export interface DepartmentInsight {
+  department_id: string;
+  name: string;
+  document_count: number;
+  last_activity: string | null;
+}
+
+export interface ConfidenceDistribution {
+  high: number;
+  medium: number;
+  low: number;
+  unknown: number;
+}
+
+export interface CorpusHealth {
+  total_documents: number;
+  ingestion_volume_by_month: { month: string; count: number }[];
+  classification_confidence_distribution: ConfidenceDistribution;
+  date_extraction_confidence_distribution: ConfidenceDistribution;
+}
+
+export interface SearchHistoryItem {
+  query: string;
+  filters: Record<string, unknown>;
+  result_count: number;
+  created_at: string;
+}
+
+export interface AlertItem {
+  id: string;
+  alert_type: string;
+  target: Record<string, unknown>;
+  frequency: string;
+  is_active: boolean;
+  last_checked_at: string | null;
 }
 
 export interface GraphNode {
   id: string;
-  label: string;
   type: string;
+  name: string;
+  document_id: string | null;
 }
 
 export interface GraphEdge {
   source: string;
   target: string;
   type: string;
+  confidence: number | null;
+  evidence_text: string | null;
 }
 
 export interface DocumentGraph {
@@ -78,73 +148,33 @@ export interface DocumentGraph {
   edges: GraphEdge[];
 }
 
-export interface SearchResult extends DocumentSummary {
-  snippet: string;
+// AI jobs (backend/app/api/v1/ai.py) are async: POST enqueues a Celery job,
+// GET /ai/jobs/{id} is polled until it settles.
+export interface JobAccepted {
+  job_id: string;
+  status: 'queued';
 }
 
-export interface SearchResponse extends Paginated<SearchResult> {
-  facets: {
-    department: FacetCount[];
-    type: FacetCount[];
-    jurisdiction: FacetCount[];
-  };
+export interface SourceReference {
+  document_id: string;
+  page: number | null;
+  section: string | null;
+  source_url: string | null;
 }
 
-export interface AutocompleteSuggestion {
-  label: string;
-  entityType: string;
-  entityId: string;
-}
-
-export interface ActivityItem {
-  id: string;
-  type: string;
-  description: string;
-  timestamp: string;
-  documentId?: string;
-}
-
-export interface AlertItem {
-  id: string;
-  title: string;
-  description: string;
-  createdAt: string;
-  severity: Severity;
-}
-
-export interface DashboardSummary {
-  trendingSearches: { term: string; count: number }[];
-  frequentDocuments: DocumentSummary[];
-  departmentActivity: { departmentId: string; departmentName: string; count: number }[];
-  corpusHealth: {
-    classificationConfidenceAvg: number;
-    extractionConfidenceAvg: number;
-    classificationConfidenceDistribution: { bucket: string; count: number }[];
-    extractionConfidenceDistribution: { bucket: string; count: number }[];
-  };
-}
-
-export interface ChangeRadarItem {
-  id: string;
-  severity: Severity;
-  title: string;
-  whatChanged: string;
-  publishedAt: string;
-  affectedDocuments: DocumentSummary[];
-}
-
-export interface Scheme {
-  id: string;
-  name: string;
-  department: string;
+export interface DocumentSummaryResult {
   summary: string;
-  sourceUrl: string;
+  key_provisions: string[];
+  eligibility: string[];
+  conditions: string[];
+  dates: string[];
+  limitations: string[];
+  source_references: SourceReference[];
 }
 
-export interface SchemeMatch {
-  scheme: Scheme;
-  matchedConditions: string[];
-  missingConditions: string[];
-  requiredDocuments: string[];
-  sourceUrl: string;
-}
+export type JobStatus =
+  | { status: 'pending' }
+  | { status: 'failed'; error: string }
+  | { status: 'success'; result: DocumentSummaryResult }
+  | { status: 'insufficient_evidence'; error?: string }
+  | { status: 'started' | 'retry' | 'revoked' };

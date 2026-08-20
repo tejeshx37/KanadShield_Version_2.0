@@ -3,25 +3,21 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
 import { LoadingState, ErrorState, EmptyState } from '../components/ui/QueryStates';
-import { StatusPill } from '../components/ui/Pills';
-import { useArchivesList, useDepartments, useDocumentTypes, useJurisdictions } from '../api/hooks';
+import { useArchivesList } from '../api/hooks';
+import { DOCUMENT_TYPES, JURISDICTIONS, documentTypeLabel, jurisdictionLabel } from '../lib/referenceData';
 
 export function ArchivesPage() {
-  const [department, setDepartment] = useState('');
-  const [type, setType] = useState('');
+  const [documentType, setDocumentType] = useState('');
   const [jurisdiction, setJurisdiction] = useState('');
+  const [state, setState] = useState('');
   const [page, setPage] = useState(1);
 
-  const departments = useDepartments();
-  const documentTypes = useDocumentTypes();
-  const jurisdictions = useJurisdictions();
-
   const list = useArchivesList({
-    department: department || undefined,
-    type: type || undefined,
+    document_type: documentType || undefined,
     jurisdiction: jurisdiction || undefined,
+    state: state || undefined,
     page,
-    pageSize: 20,
+    page_size: 20,
   });
 
   return (
@@ -30,32 +26,17 @@ export function ArchivesPage() {
 
       <div className="mb-6 flex flex-wrap gap-3">
         <select
-          value={department}
+          value={documentType}
           onChange={(e) => {
-            setDepartment(e.target.value);
-            setPage(1);
-          }}
-          className="rounded-[--radius-token] border border-card-border bg-card-bg px-3 py-2 text-sm"
-        >
-          <option value="">All departments</option>
-          {departments.data?.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={type}
-          onChange={(e) => {
-            setType(e.target.value);
+            setDocumentType(e.target.value);
             setPage(1);
           }}
           className="rounded-[--radius-token] border border-card-border bg-card-bg px-3 py-2 text-sm"
         >
           <option value="">All types</option>
-          {documentTypes.data?.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
+          {DOCUMENT_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {documentTypeLabel(t)}
             </option>
           ))}
         </select>
@@ -68,12 +49,21 @@ export function ArchivesPage() {
           className="rounded-[--radius-token] border border-card-border bg-card-bg px-3 py-2 text-sm"
         >
           <option value="">All jurisdictions</option>
-          {jurisdictions.data?.map((j) => (
-            <option key={j.id} value={j.id}>
-              {j.name}
+          {JURISDICTIONS.map((j) => (
+            <option key={j} value={j}>
+              {jurisdictionLabel(j)}
             </option>
           ))}
         </select>
+        <input
+          value={state}
+          onChange={(e) => {
+            setState(e.target.value);
+            setPage(1);
+          }}
+          placeholder="State (e.g. Gujarat)"
+          className="rounded-[--radius-token] border border-card-border bg-card-bg px-3 py-2 text-sm"
+        />
       </div>
 
       {list.isLoading && <LoadingState label="Loading archives…" />}
@@ -90,23 +80,27 @@ export function ArchivesPage() {
               to={`/archives/documents/${doc.id}`}
               className="block rounded-[--radius-token] border border-card-border bg-card-bg p-5 hover:border-accent-gold"
             >
-              <div className="mb-2 flex items-center justify-between">
-                <StatusPill status={doc.status} />
-                <span className="mono text-xs text-ink-muted">{doc.referenceNumber}</span>
+              <div className="mb-2 flex items-center justify-between text-xs text-ink-muted">
+                <span className="rounded-full bg-accent-gold-soft px-2.5 py-1 font-semibold text-accent-gold">
+                  {documentTypeLabel(doc.document_type)}
+                </span>
+                <span>{doc.date ? new Date(doc.date).toLocaleDateString() : 'Date unknown'}</span>
               </div>
               <p className="mb-1 flex items-center gap-2 text-base font-bold text-ink">
                 <FileText size={16} className="text-ink-muted" aria-hidden="true" />
                 {doc.title}
               </p>
               <p className="text-xs text-ink-muted">
-                {doc.department} · {doc.type} · {new Date(doc.issuedDate).toLocaleDateString()}
+                {jurisdictionLabel(doc.jurisdiction)}
+                {doc.state ? ` · ${doc.state}` : ''}
+                {doc.year ? ` · ${doc.year}` : ''}
               </p>
             </Link>
           ))}
         </div>
       )}
 
-      {list.data && list.data.total > list.data.pageSize && (
+      {list.data && list.data.total > list.data.page_size && (
         <div className="mt-6 flex items-center justify-center gap-4">
           <button
             type="button"
@@ -119,7 +113,7 @@ export function ArchivesPage() {
           <span className="text-sm text-ink-muted">Page {page}</span>
           <button
             type="button"
-            disabled={page * list.data.pageSize >= list.data.total}
+            disabled={page * list.data.page_size >= list.data.total}
             onClick={() => setPage((p) => p + 1)}
             className="rounded-[--radius-token] border border-card-border px-3 py-1.5 text-sm disabled:opacity-40"
           >

@@ -1,38 +1,42 @@
 import { FileText } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
 import { LoadingState, ErrorState, EmptyState } from '../components/ui/QueryStates';
-import { StatusPill } from '../components/ui/Pills';
-import { useDepartments, useDocumentTypes, useJurisdictions, useSearch } from '../api/hooks';
+import { useDepartments, useSearch } from '../api/hooks';
+import { documentTypeLabel, jurisdictionLabel } from '../lib/referenceData';
 
 function FacetGroup({
   title,
   facets,
   activeId,
   onSelect,
+  labelFor,
 }: {
   title: string;
-  facets: { id: string; label: string; count: number }[];
+  facets: Record<string, number>;
   activeId?: string;
   onSelect: (id?: string) => void;
+  labelFor: (id: string) => string;
 }) {
+  const entries = Object.entries(facets);
+  if (entries.length === 0) return null;
+
   return (
     <div className="mb-6">
       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</p>
       <ul className="flex flex-col gap-1">
-        {facets.map((f) => (
-          <li key={f.id}>
+        {entries.map(([id, count]) => (
+          <li key={id}>
             <button
               type="button"
-              onClick={() => onSelect(activeId === f.id ? undefined : f.id)}
+              onClick={() => onSelect(activeId === id ? undefined : id)}
               className={`flex w-full items-center justify-between rounded-[--radius-token] px-2 py-1.5 text-left text-sm ${
-                activeId === f.id ? 'bg-accent-gold-soft text-ink' : 'text-ink-muted hover:bg-card-border/40'
+                activeId === id ? 'bg-accent-gold-soft text-ink' : 'text-ink-muted hover:bg-card-border/40'
               }`}
             >
-              <span>{f.label}</span>
-              <span>{f.count}</span>
+              <span>{labelFor(id)}</span>
+              <span>{count}</span>
             </button>
           </li>
         ))}
@@ -44,17 +48,20 @@ function FacetGroup({
 export function ResearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [inputValue, setInputValue] = useState(searchParams.get('q') ?? '');
-  const department = searchParams.get('department') ?? undefined;
-  const type = searchParams.get('type') ?? undefined;
+  const documentType = searchParams.get('document_type') ?? undefined;
   const jurisdiction = searchParams.get('jurisdiction') ?? undefined;
+  const department = searchParams.get('department') ?? undefined;
 
-  useDepartments();
-  useDocumentTypes();
-  useJurisdictions();
+  const departments = useDepartments();
 
   const params = useMemo(
-    () => ({ q: searchParams.get('q') ?? '', department, type, jurisdiction }),
-    [searchParams, department, type, jurisdiction],
+    () => ({
+      q: searchParams.get('q') ?? '',
+      document_type: documentType,
+      jurisdiction,
+      department,
+    }),
+    [searchParams, documentType, jurisdiction, department],
   );
 
   const results = useSearch(params);
@@ -96,25 +103,37 @@ export function ResearchPage() {
       {params.q && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
           <aside>
+            <div className="mb-6">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">Department</p>
+              <select
+                value={department ?? ''}
+                onChange={(e) => updateParam('department', e.target.value || undefined)}
+                className="w-full rounded-[--radius-token] border border-card-border bg-card-bg px-2 py-1.5 text-sm"
+              >
+                <option value="">All departments</option>
+                {departments.data?.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {results.data?.facets && (
               <>
                 <FacetGroup
-                  title="Department"
-                  facets={results.data.facets.department}
-                  activeId={department}
-                  onSelect={(v) => updateParam('department', v)}
-                />
-                <FacetGroup
                   title="Type"
-                  facets={results.data.facets.type}
-                  activeId={type}
-                  onSelect={(v) => updateParam('type', v)}
+                  facets={results.data.facets.document_type}
+                  activeId={documentType}
+                  onSelect={(v) => updateParam('document_type', v)}
+                  labelFor={documentTypeLabel}
                 />
                 <FacetGroup
                   title="Jurisdiction"
                   facets={results.data.facets.jurisdiction}
                   activeId={jurisdiction}
                   onSelect={(v) => updateParam('jurisdiction', v)}
+                  labelFor={jurisdictionLabel}
                 />
               </>
             )}
@@ -130,20 +149,23 @@ export function ResearchPage() {
               <div className="flex flex-col gap-4">
                 {results.data.items.map((r) => (
                   <Link
-                    key={r.id}
-                    to={`/archives/documents/${r.id}`}
+                    key={r.document_id}
+                    to={`/archives/documents/${r.document_id}`}
                     className="block rounded-[--radius-token] border border-card-border bg-card-bg p-5 hover:border-accent-gold"
                   >
-                    <div className="mb-2 flex items-center justify-between">
-                      <StatusPill status={r.status} />
-                      <span className="mono text-xs text-ink-muted">{r.referenceNumber}</span>
+                    <div className="mb-2 flex items-center justify-between text-xs text-ink-muted">
+                      <span className="rounded-full bg-accent-gold-soft px-2.5 py-1 font-semibold text-accent-gold">
+                        {documentTypeLabel(r.document_type)}
+                      </span>
+                      <span>{r.date ? new Date(r.date).toLocaleDateString() : 'Date unknown'}</span>
                     </div>
                     <p className="mb-1 flex items-center gap-2 text-base font-bold text-ink">
                       <FileText size={16} className="text-ink-muted" aria-hidden="true" />
                       {r.title}
                     </p>
                     <p className="mb-2 text-xs text-ink-muted">
-                      {r.department} · {r.type} · {new Date(r.issuedDate).toLocaleDateString()}
+                      {jurisdictionLabel(r.jurisdiction)}
+                      {r.state ? ` · ${r.state}` : ''}
                     </p>
                     <p className="text-sm text-ink-muted">{r.snippet}</p>
                   </Link>
