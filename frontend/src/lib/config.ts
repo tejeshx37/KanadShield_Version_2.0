@@ -1,0 +1,3 @@
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/v1';
+
+export const DIGILOCKER_ENABLED = import.meta.env.VITE_DIGILOCKER_ENABLED === 'true';

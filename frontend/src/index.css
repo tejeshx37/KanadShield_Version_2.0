@@ -1,0 +1,114 @@
+@import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Surfaces */
+  --sidebar-bg: #1b2333;
+  --sidebar-text: #c9ceda;
+  --sidebar-text-active: #ffffff;
+  --canvas-bg: #f5f1e8;
+  --card-bg: #ffffff;
+  --card-border: #e4dfd2;
+
+  /* Text */
+  --ink: #1b2333;
+  --ink-muted: #6b7280;
+
+  /* Accent */
+  --accent-gold: #c9a227;
+  --accent-gold-soft: #f1e6c8;
+
+  /* Severity / status */
+  --severity-critical: #b3261e;
+  --severity-critical-bg: #fbeae9;
+  --severity-high: #b5651d;
+  --severity-high-bg: #fbefe2;
+  --severity-medium: #92720c;
+  --severity-medium-bg: #faf3d9;
+  --severity-low: #52606d;
+  --severity-low-bg: #eef0f2;
+
+  --status-active: #2f6d4f;
+  --status-active-bg: #e4efe8;
+  --status-amended: #a97a2f;
+  --status-amended-bg: #f1e6cf;
+  --status-superseded: #8c2f2f;
+  --status-superseded-bg: #f3e3e1;
+
+  --radius: 8px;
+
+  --font-serif: 'Fraunces', 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+
+@theme {
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-sidebar-text-active: var(--sidebar-text-active);
+  --color-canvas-bg: var(--canvas-bg);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-gold-soft: var(--accent-gold-soft);
+
+  --color-severity-critical: var(--severity-critical);
+  --color-severity-critical-bg: var(--severity-critical-bg);
+  --color-severity-high: var(--severity-high);
+  --color-severity-high-bg: var(--severity-high-bg);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-medium-bg: var(--severity-medium-bg);
+  --color-severity-low: var(--severity-low);
+  --color-severity-low-bg: var(--severity-low-bg);
+
+  --color-status-active: var(--status-active);
+  --color-status-active-bg: var(--status-active-bg);
+  --color-status-amended: var(--status-amended);
+  --color-status-amended-bg: var(--status-amended-bg);
+  --color-status-superseded: var(--status-superseded);
+  --color-status-superseded-bg: var(--status-superseded-bg);
+
+  --radius-token: var(--radius);
+
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--canvas-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+code,
+.mono {
+  font-family: var(--font-mono);
+}
+
+a {
+  color: inherit;
+}
