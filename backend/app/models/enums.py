@@ -1,0 +1,94 @@
+import enum
+
+
+class DocumentType(str, enum.Enum):
+    ACT = "ACT"
+    RULE = "RULE"
+    REGULATION = "REGULATION"
+    GR = "GR"
+    NOTIFICATION = "NOTIFICATION"
+    CIRCULAR = "CIRCULAR"
+    ORDER = "ORDER"
+    GAZETTE = "GAZETTE"
+    JUDGMENT = "JUDGMENT"
+    SCHEME = "SCHEME"
+    ORDINANCE = "ORDINANCE"
+    STATUTE = "STATUTE"
+    GUIDELINE = "GUIDELINE"
+    OTHER = "OTHER"
+
+
+class Jurisdiction(str, enum.Enum):
+    CENTRAL = "CENTRAL"
+    STATE = "STATE"
+
+
+class RelationshipType(str, enum.Enum):
+    CONTAINS = "CONTAINS"
+    AMENDS = "AMENDS"
+    AMENDED_BY = "AMENDED_BY"
+    REPEALS = "REPEALS"
+    REPEALED_BY = "REPEALED_BY"
+    IMPLEMENTS = "IMPLEMENTS"
+    IMPLEMENTED_BY = "IMPLEMENTED_BY"
+    CITES = "CITES"
+    CITED_BY = "CITED_BY"
+    INTERPRETS = "INTERPRETS"
+    INTERPRETED_BY = "INTERPRETED_BY"
+    REFERS_TO = "REFERS_TO"
+    RELATED_TO = "RELATED_TO"
+    PUBLISHED_IN = "PUBLISHED_IN"
+    ISSUED_BY = "ISSUED_BY"
+    BELONGS_TO = "BELONGS_TO"
+    SUPERSEDES = "SUPERSEDES"
+    SUPERSEDED_BY = "SUPERSEDED_BY"
+
+
+class UserRole(str, enum.Enum):
+    USER = "USER"
+    RESEARCHER = "RESEARCHER"
+    ADMIN = "ADMIN"
+
+
+class ImpactLevel(str, enum.Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class ChunkType(str, enum.Enum):
+    CHAPTER = "CHAPTER"
+    SECTION = "SECTION"
+    CLAUSE = "CLAUSE"
+    FACTS = "FACTS"
+    ISSUES = "ISSUES"
+    ANALYSIS = "ANALYSIS"
+    DECISION = "DECISION"
+    SUBJECT = "SUBJECT"
+    PROVISIONS = "PROVISIONS"
+    ELIGIBILITY = "ELIGIBILITY"
+    CONDITIONS = "CONDITIONS"
+    GENERIC = "GENERIC"
+
+
+class ExtractionMethod(str, enum.Enum):
+    STRUCTURAL = "STRUCTURAL"
+    REGEX = "REGEX"
+    NLP = "NLP"
+    LLM = "LLM"
+    MANUAL = "MANUAL"
+    UNKNOWN = "UNKNOWN"
+
+
+class CourtLevel(str, enum.Enum):
+    SUPREME_COURT = "SUPREME_COURT"
+    HIGH_COURT = "HIGH_COURT"
+    DISTRICT_COURT = "DISTRICT_COURT"
+    TRIBUNAL = "TRIBUNAL"
+
+
+class AlertFrequency(str, enum.Enum):
+    IMMEDIATE = "IMMEDIATE"
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
