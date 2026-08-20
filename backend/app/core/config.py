@@ -94,6 +94,14 @@ class Settings(BaseSettings):
     INGESTION_REQUEST_TIMEOUT_SECONDS: int = 30
     INGESTION_MAX_RETRIES: int = 3
     INGESTION_RETRY_BACKOFF_SECONDS: float = 2.0
+    ENABLED_INGESTION_SOURCES: str = "SOURCE_INDIA_CODE,SOURCE_EGAZETTE,SOURCE_GUJARAT_GR"
+    SOURCE_INDIA_CODE_BASE_URL: str = "https://www.indiacode.nic.in"
+    SOURCE_EGAZETTE_BASE_URL: str = "https://egazette.gov.in"
+    SOURCE_GUJARAT_GR_BASE_URL: str = "https://gr.gujarat.gov.in"
+
+    @property
+    def enabled_ingestion_sources(self) -> list[str]:
+        return [x.strip() for x in self.ENABLED_INGESTION_SOURCES.split(",") if x.strip()]
 
     # --- Analytics ---
     ANALYTICS_TRENDING_WINDOW_DAYS: int = 7
