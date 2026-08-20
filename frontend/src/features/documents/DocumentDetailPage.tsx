@@ -3,12 +3,14 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { fetchDocument, summarizeDocument } from '@/api/documents'
 import { createBookmark } from '@/api/personalization'
+import { fetchTranslation, requestOfflineBundle } from '@/api/offline'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { useOnlineStatus } from '@/lib/useOnlineStatus'
 import { cacheDocument, cacheSummary, getCachedDocument, getCachedSummary, queueOfflineAction } from '@/lib/offlineCache'
 import { extractErrorMessage } from '@/api/client'
+import { SUPPORTED_LANGUAGES } from '@/lib/env'
 
 export function DocumentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -49,6 +51,24 @@ export function DocumentDetailPage() {
     },
   })
 
+  const downloadMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) return
+      const bundle = await requestOfflineBundle([id])
+      for (const item of bundle.items) {
+        await cacheDocument(item.document)
+        if (item.summary) await cacheSummary(item.document.id, item.summary)
+      }
+    },
+  })
+
+  const [translationLanguage, setTranslationLanguage] = useState<string | null>(null)
+  const translationQuery = useQuery({
+    queryKey: ['translation', id, translationLanguage],
+    queryFn: () => fetchTranslation(id!, translationLanguage!),
+    enabled: isOnline && !!id && !!translationLanguage,
+  })
+
   if (!doc) {
     return <p className="text-sm text-ink-500">{isOnline ? 'Loading…' : 'Not available offline — connect to view this document.'}</p>
   }
@@ -69,6 +89,11 @@ export function DocumentDetailPage() {
               <Button variant="outline" size="sm" onClick={() => bookmarkMutation.mutate()} disabled={bookmarkMutation.isPending}>
                 {bookmarkMutation.isSuccess ? 'Bookmarked' : 'Bookmark'}
               </Button>
+              {isOnline && (
+                <Button variant="outline" size="sm" onClick={() => downloadMutation.mutate()} disabled={downloadMutation.isPending}>
+                  {downloadMutation.isPending ? 'Downloading…' : downloadMutation.isSuccess ? 'Downloaded' : 'Download for offline'}
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardBody>
@@ -83,6 +108,36 @@ export function DocumentDetailPage() {
               <a href={doc.source_url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-medium text-brand-700 hover:underline">
                 View original source document ↗
               </a>
+            )}
+
+            {isOnline && (
+              <div className="mt-4 border-t border-ink-100 pt-3">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-500">View translated content</p>
+                <div className="flex gap-1">
+                  <button
+                    className={`rounded px-2 py-1 text-xs ${translationLanguage === null ? 'bg-brand-700 text-white' : 'bg-ink-100 text-ink-700'}`}
+                    onClick={() => setTranslationLanguage(null)}
+                  >
+                    Original ({doc.source_language.toUpperCase()})
+                  </button>
+                  {SUPPORTED_LANGUAGES.filter((l) => l !== doc.source_language).map((lang) => (
+                    <button
+                      key={lang}
+                      className={`rounded px-2 py-1 text-xs ${translationLanguage === lang ? 'bg-brand-700 text-white' : 'bg-ink-100 text-ink-700'}`}
+                      onClick={() => setTranslationLanguage(lang)}
+                    >
+                      {lang.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                {translationLanguage && (
+                  <div className="mt-2 text-sm text-ink-800">
+                    {translationQuery.isPending && <p className="text-ink-500">Translating…</p>}
+                    {translationQuery.isError && <p className="text-red-700">{extractErrorMessage(translationQuery.error)}</p>}
+                    {translationQuery.data && <p>{translationQuery.data.translated_text}</p>}
+                  </div>
+                )}
+              </div>
             )}
           </CardBody>
         </Card>
