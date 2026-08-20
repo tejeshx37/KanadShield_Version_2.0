@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -14,6 +15,7 @@ from app.models.enums import DocumentType, Jurisdiction
 from app.models.users import SearchHistory
 
 _LEXICAL_TS_CONFIG = {"en": "english", "gu": "simple", "hi": "simple"}
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -139,7 +141,17 @@ class HybridSearchService:
         candidate_limit = max(self.settings.RAG_TOP_K_RETRIEVAL * 3, page * page_size * 3)
 
         lexical_scores = await self._lexical_scores(query, filters, candidate_limit) if query.strip() else {}
-        semantic_scores = await self._semantic_scores(query, filters, candidate_limit) if query.strip() else {}
+        semantic_scores: dict[uuid.UUID, float] = {}
+        if query.strip():
+            try:
+                semantic_scores = await self._semantic_scores(query, filters, candidate_limit)
+            except Exception:
+                # The embedding provider (e.g. a local model download, or a
+                # remote Ollama/OpenAI-compatible host) is a real external
+                # dependency that can be unavailable. Degrade to lexical-only
+                # rather than failing the whole search — never fake semantic
+                # results, just honestly skip that signal and log why.
+                logger.warning("Semantic search unavailable, falling back to lexical-only", exc_info=True)
 
         candidate_ids = set(lexical_scores) | set(semantic_scores)
         if not candidate_ids:

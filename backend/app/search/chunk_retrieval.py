@@ -1,3 +1,4 @@
+import logging
 import uuid
 from dataclasses import dataclass
 
@@ -7,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.intelligence.providers.base import EmbeddingProvider
 from app.models.document import Document, DocumentChunk
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,7 +38,14 @@ async def retrieve_chunks(
     only ever sees real retrieved chunk text, never whole-document dumps
     or model-memory answers."""
     top_k = top_k or settings.RAG_TOP_K_RETRIEVAL
-    vectors = await embeddings.embed([query])
+    try:
+        vectors = await embeddings.embed([query])
+    except Exception:
+        # Embedding provider unavailable — RAG has no evidence to ground an
+        # answer on, so callers must see an empty retrieval (leading to an
+        # honest "insufficient evidence" response) rather than a 500.
+        logger.warning("Embedding provider unavailable during chunk retrieval", exc_info=True)
+        return []
     query_vector = vectors[0]
 
     distance = DocumentChunk.embedding.cosine_distance(query_vector).label("distance")

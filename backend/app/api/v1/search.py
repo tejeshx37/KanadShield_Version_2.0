@@ -46,7 +46,7 @@ async def search(
         year_to=year_to,
         language=language,
     )
-    service = HybridSearchService(db, settings, get_embedding_provider(settings))
+    service = HybridSearchService(db, settings, get_embedding_provider())
     result = await service.search(q, filters, page=page, page_size=page_size, user_id=user.id if user else None)
     return {
         "items": [item.__dict__ for item in result.items],

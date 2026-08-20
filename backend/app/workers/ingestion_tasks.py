@@ -24,9 +24,9 @@ async def _run_source(source_name: str) -> dict:
         pipeline = IngestionPipeline(
             session,
             settings,
-            get_llm_provider(settings),
-            get_embedding_provider(settings),
-            get_ocr_provider(settings),
+            get_llm_provider(),
+            get_embedding_provider(),
+            get_ocr_provider(),
         )
         run = await pipeline.run(connector)
         await session.commit()

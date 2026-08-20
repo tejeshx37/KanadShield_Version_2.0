@@ -53,5 +53,5 @@ async def compare_documents(
         ],
     }
     if payload.explain:
-        response["explanation"] = await explain_diff(segments, get_llm_provider(settings))
+        response["explanation"] = await explain_diff(segments, get_llm_provider())
     return response

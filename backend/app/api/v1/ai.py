@@ -29,7 +29,7 @@ async def summarize(
 ):
     try:
         summary = await summarize_document(
-            db, settings, get_llm_provider(settings), get_embedding_provider(settings), document_id
+            db, settings, get_llm_provider(), get_embedding_provider(), document_id
         )
     except SummarizationError as exc:
         raise HTTPException(
@@ -50,8 +50,8 @@ async def ask(
     answer = await answer_question(
         db,
         settings,
-        get_llm_provider(settings),
-        get_embedding_provider(settings),
+        get_llm_provider(),
+        get_embedding_provider(),
         payload.question,
         document_id=payload.document_id,
     )
