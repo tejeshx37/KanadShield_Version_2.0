@@ -16,14 +16,36 @@ export async function fetchJudgment(id: string) {
   return data
 }
 
+interface JobResult<T> {
+  status: 'pending' | 'started' | 'retry' | 'success' | 'insufficient_evidence' | 'failed'
+  result?: T
+  error?: string
+}
+
+async function pollJob<T>(jobId: string, { intervalMs = 800, timeoutMs = 30_000 } = {}): Promise<JobResult<T>> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    const { data } = await apiClient.get<JobResult<T>>(`/ai/jobs/${jobId}`)
+    if (data.status !== 'pending' && data.status !== 'started' && data.status !== 'retry') return data
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
+  return { status: 'failed', error: 'Timed out waiting for the AI job to complete.' }
+}
+
+/** Expensive AI processing runs in a Celery worker, never inline in the
+ * request — this enqueues the job and polls for the result. */
 export async function summarizeDocument(id: string): Promise<DocumentSummaryAI> {
-  const { data } = await apiClient.post<DocumentSummaryAI>(`/ai/summarize/${id}`)
-  return data
+  const { data } = await apiClient.post<{ job_id: string }>(`/ai/summarize/${id}`)
+  const job = await pollJob<DocumentSummaryAI>(data.job_id)
+  if (job.status === 'success' && job.result) return job.result
+  throw new Error(job.error ?? 'Insufficient evidence to summarize this document.')
 }
 
 export async function askQuestion(question: string, documentId?: string): Promise<AskAnswer> {
-  const { data } = await apiClient.post<AskAnswer>('/ai/ask', { question, document_id: documentId })
-  return data
+  const { data } = await apiClient.post<{ job_id: string }>('/ai/ask', { question, document_id: documentId })
+  const job = await pollJob<AskAnswer>(data.job_id)
+  if (job.result) return job.result
+  throw new Error(job.error ?? 'The AI job did not return a result.')
 }
 
 export async function fetchTimeline(documentId: string) {

@@ -11,6 +11,7 @@ celery_app = Celery(
     include=[
         "app.workers.ingestion_tasks",
         "app.workers.alert_tasks",
+        "app.workers.ai_tasks",
     ],
 )
 celery_app.conf.task_serializer = "json"
