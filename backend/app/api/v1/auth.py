@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_app_settings, get_current_user, get_db
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
+from app.core.rate_limit import limiter
 from app.core.security import (
     create_access_token,
     generate_refresh_token,
@@ -19,7 +18,6 @@ from app.repositories.entity_repositories import UserRepository
 from app.schemas.auth import RefreshRequest, TokenResponse, UserLoginRequest, UserRegisterRequest, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-limiter = Limiter(key_func=get_remote_address)
 
 
 async def _issue_tokens(user: User, db: AsyncSession, settings: Settings) -> TokenResponse:
@@ -37,7 +35,8 @@ async def _issue_tokens(user: User, db: AsyncSession, settings: Settings) -> Tok
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(payload: UserRegisterRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit(get_settings().RATE_LIMIT_AUTH)
+async def register(request: Request, payload: UserRegisterRequest, db: AsyncSession = Depends(get_db)):
     repo = UserRepository(db)
     if await repo.get_by_email(payload.email) is not None:
         raise HTTPException(
@@ -53,7 +52,9 @@ async def register(payload: UserRegisterRequest, db: AsyncSession = Depends(get_
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit(get_settings().RATE_LIMIT_AUTH)
 async def login(
+    request: Request,
     payload: UserLoginRequest,
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_app_settings),

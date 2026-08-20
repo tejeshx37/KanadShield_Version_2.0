@@ -1,15 +1,14 @@
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
-from app.api.v1 import acts, auth, documents, judgments, organizations, search
+from app.api.v1 import ai, acts, auth, documents, judgments, organizations, search
 from app.core.config import get_settings
+from app.core.rate_limit import limiter
 
 settings = get_settings()
-limiter = Limiter(key_func=get_remote_address, default_limits=[settings.RATE_LIMIT_DEFAULT])
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 app.state.limiter = limiter
@@ -65,3 +64,4 @@ app.include_router(acts.router, prefix=settings.API_V1_PREFIX)
 app.include_router(judgments.router, prefix=settings.API_V1_PREFIX)
 app.include_router(organizations.router, prefix=settings.API_V1_PREFIX)
 app.include_router(search.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ai.router, prefix=settings.API_V1_PREFIX)
